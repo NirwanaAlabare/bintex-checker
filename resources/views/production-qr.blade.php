@@ -66,7 +66,7 @@
             <h5 class="card-title fw-bold mb-0"><i class="fas fa-list"></i> Item Detail</h5>
         </div>
         <div class="card-body">
-            <h3 class="text-sb fw-bold" id="label_kode_numbering">Label Kode Numbering</h3>
+            <h3 class="text-sb fw-bold" id="label_kode_numbering">Kode Barcode Bintex</h3>
             <div class="row align-items-end justify-content-center">
                 <div class="col-3 col-md-3">
                     <div class="mb-3">
@@ -285,6 +285,10 @@
                             <tr>
                                 <th>No Trans Mutasi</th>
                                 <th>Tgl Mutasi</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Rak Asal</th>
+                                <th>Rak Tujuan</th>
                                 <th>No Bintex Mutasi</th>
                             </tr>
                         </thead>
@@ -310,6 +314,38 @@
                             </tr>
                         </thead>
                         <tbody id="tbPengeluaranKain">
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr style="border-top: 1px solid rgba(109, 109, 109, 1);">
+                <h5 class="text-sb fw-bold">PENERIMAAN CUTTING</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Tgl Terima</th>
+                                <th>Barcode</th>
+                                <th>Qty Out</th>
+                                <th>Unit</th>
+                                <th>Qty Konv</th>
+                                <th>Unit Konv</th>
+                                <th>No Req</th>
+                                <th>No BPPB</th>
+                                <th>Tgl BPPB</th>
+                                <th>Tujuan</th>
+                                <th>No WS</th>
+                                <th>No WS Act</th>
+                                <th>ID Item</th>
+                                <th>Style</th>
+                                <th>Warna</th>
+                                <th>No Lot</th>
+                                <th>No Roll</th>
+                                <th>No Roll Buyer</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbPenerimaanCutting">
                         </tbody>
                     </table>
                 </div>
@@ -347,6 +383,8 @@
                             <tr>
                                 <th>No BPB</th>
                                 <th>Tgl BPB</th>
+                                <th>Qty Return</th>
+                                <th>Unit</th>
                                 <th>No Bintex Return</th>
                             </tr>
                         </thead>
@@ -443,39 +481,35 @@
         });
 
         let ajaxDone = 0;
-        let totalAjax = 7; 
+        let totalAjax = 8; 
+        let isProcessing = false;
 
         async function scanqr() {
-            document.getElementById("loading").classList.remove("d-none");
+            if (isProcessing) return;
+            isProcessing = true;
 
+            $('#loading').removeClass('d-none');
             ajaxDone = 0;
 
-            let txtqr = document.getElementById("txtqr").value;
+            let txtqr = $("#txtqr").val();
+
             if (txtqr == '') {
-                document.getElementById("loading").classList.add("d-none");
-
-                return
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Data QR Tidak Terdaftar',
-                    showConfirmButton: true,
-                    showCancelButton: false,
-                })
-
-                $('#scan-qr-header').CardWidget('toggle')
+                $('#loading').addClass('d-none');
+                isProcessing = false;
+                return;
             }
 
-            document.getElementById('label_kode_numbering').innerHTML = "Kode Label : "+txtqr;
+            $('#label_kode_numbering').text("Kode Barcode Bintex : " + txtqr);
 
             getData(txtqr);
             getDataPenerimaanKain(txtqr);
             getDataFabricInspection(txtqr);
             getDataMutasiRak(txtqr);
             getDataPengeluaranKain(txtqr);
+            getDataPenerimaanCutting(txtqr);
             getDataPemakaianKain(txtqr);
-            getDataReturnKain(txtqr)
-
-        };
+            getDataReturnKain(txtqr);
+        }
 
         function getData(txtqr) {
             $('#loading').removeClass('d-none');
@@ -608,7 +642,7 @@
                     if (!response || response.length === 0) {
                         tbMutasiRak.append(`
                             <tr>
-                                <td colspan="3" style="text-align:center;">Tidak ada data</td>
+                                <td colspan="7" style="text-align:center;">Tidak ada data</td>
                             </tr>
                         `);
                     } else {
@@ -617,6 +651,10 @@
                                 <tr>
                                     <td>${safe(item.no_mut)}</td>
                                     <td>${safe(item.tgl_mut)}</td>
+                                    <td class="text-end">${safe(item.qty_mutasi)}</td>
+                                    <td>${safe(item.unit)}</td>
+                                    <td>${safe(item.rak_asal)}</td>
+                                    <td>${safe(item.rak_tujuan)}</td>
                                     <td>${safe(item.idbpb_det)}</td>
                                 </tr>
                             `);
@@ -691,6 +729,71 @@
             });
         }
 
+        function getDataPenerimaanCutting(txtqr) {
+            $('#loading').removeClass('d-none');
+
+            $.ajax({
+                type: "GET",
+                url: '{{ route('getDataPenerimaanCutting') }}',
+                data: { txtqr: txtqr },
+                dataType: 'json',
+                success: function(response) {
+                    console.log(response)
+
+                    let tbPenerimaanCutting = $('#tbPenerimaanCutting');
+                    tbPenerimaanCutting.empty();
+
+                    const safe = val => (val !== null && val !== undefined && val !== '' ? val : '-');
+
+                    if (!response || response.length === 0) {
+                        tbPenerimaanCutting.append(`
+                            <tr>
+                                <td colspan="9" style="text-align:center;">Tidak ada data</td>
+                            </tr>
+                        `);
+                    } else {
+                        $.each(response, function(index, item) {
+                            tbPenerimaanCutting.append(`
+                                <tr>
+                                    <td>${safe(item.tanggal_terima)}</td>
+                                    <td>${safe(item.barcode)}</td>
+                                    <td class="text-end">${safe(item.qty_out)}</td>
+                                    <td>${safe(item.unit)}</td>
+                                    <td class="text-end">${safe(item.qty_konv)}</td>
+                                    <td>${safe(item.unit_konv)}</td>
+                                    <td>${safe(item.no_req)}</td>
+                                    <td>${safe(item.no_bppb)}</td>
+                                    <td>${safe(item.tanggal_bppb)}</td>
+                                    <td>${safe(item.tujuan)}</td>
+                                    <td>${safe(item.no_ws)}</td>
+                                    <td>${safe(item.no_ws_act)}</td>
+                                    <td>${safe(item.id_item)}</td>
+                                    <td>${safe(item.style)}</td>
+                                    <td>${safe(item.warna)}</td>
+                                    <td>${safe(item.no_lot)}</td>
+                                    <td class="text-end">${safe(item.no_roll)}</td>
+                                    <td class="text-end">${safe(item.no_roll_buyer)}</td>
+                                    <td>${safe(item.user)}</td>
+                                </tr>
+                            `);
+                        });
+                    }
+
+                    handleAjaxDone();
+                },
+                error: function(request, status, error) {
+                    handleAjaxDone();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Terjadi Kesalahan saat menarik data pengeluaran kain.',
+                        showConfirmButton: true,
+                        showCancelButton: false,
+                    });
+                },
+            });
+        }
+
         function getDataPemakaianKain(txtqr) {
             $('#loading').removeClass('d-none');
 
@@ -726,7 +829,7 @@
                                     <td class="text-end">${safe(item.reject)}</td>
                                     <td class="text-end">${safe(item.sisa_kain)}</td>
                                     <td class="text-end">${safe(item.short_roll)}</td>
-                                    <td class="text-end">${safe(item.short_roll_percentage)}</td>
+                                    <td class="text-end">${safe(Number(item.short_roll_percentage).toFixed(2))}</td>
                                     <td>${safe(item.operator)}</td>
                                 </tr>
                             `);
@@ -766,7 +869,7 @@
                     if (!response || response.length === 0) {
                         tbReturnKain.append(`
                             <tr>
-                                <td colspan="3" style="text-align:center;">Tidak ada data</td>
+                                <td colspan="5" style="text-align:center;">Tidak ada data</td>
                             </tr>
                         `);
                     } else {
@@ -775,6 +878,8 @@
                                 <tr>
                                     <td>${safe(item.no_bpb)}</td>
                                     <td>${safe(item.tgl_bpb)}</td>
+                                    <td class="text-end">${safe(item.qty)}</td>
+                                    <td>${safe(item.unit)}</td>
                                     <td>${safe(item.no_bintex_return)}</td>
                                 </tr>
                             `);
@@ -803,6 +908,7 @@
             if (ajaxDone === totalAjax) {
                 $('#scan-qr-header').CardWidget('toggle');
                 $('#loading').addClass('d-none');
+                isProcessing = false;
             }
         }
 

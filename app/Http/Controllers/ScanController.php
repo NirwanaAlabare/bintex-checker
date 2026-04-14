@@ -87,7 +87,7 @@ class ScanController extends Controller
                 ON gmt.id_item = masteritem.id_gen
             LEFT JOIN(
                 SELECT 
-                whs_lokasi_inmaterial.no_barcode,
+                    whs_lokasi_inmaterial.no_barcode,
                     whs_inmaterial_fabric.supplier
                 FROM whs_inmaterial_fabric
                 INNER JOIN whs_lokasi_inmaterial ON whs_lokasi_inmaterial.no_dok = whs_inmaterial_fabric.no_dok
@@ -197,6 +197,10 @@ class ScanController extends Controller
             SELECT 
                 whs_mut_lokasi.no_mut,
                 DATE_FORMAT(whs_mut_lokasi.tgl_mut, '%d-%m-%Y') AS tgl_mut,
+                whs_mut_lokasi.qty_mutasi,
+                whs_mut_lokasi.unit,
+                whs_mut_lokasi.rak_asal,
+                whs_mut_lokasi.rak_tujuan,
                 whs_mut_lokasi.idbpb_det
             FROM
                 whs_mut_lokasi
@@ -226,8 +230,69 @@ class ScanController extends Controller
                 whs_bppb_h.no_ws_aktual
             ")
             ->leftJoin('whs_bppb_h', 'whs_bppb_h.no_bppb', '=' ,'whs_bppb_det.no_bppb')
+            ->where('whs_bppb_det.no_bppb', 'NOT LIKE', 'MT/%')
             ->where('whs_bppb_det.id_roll', $request->txtqr)
             ->get();
+        
+        return json_encode($data);
+    }
+
+    public function getDataPenerimaanCutting(Request $request)
+    {
+        ini_set('max_execution_time', 3600);
+        ini_set('memory_limit', '1024M');
+
+        $data = DB::table('penerimaan_cutting')
+            ->selectRaw("
+                penerimaan_cutting.id,
+                DATE_FORMAT(penerimaan_cutting.tanggal_terima, '%d-%m-%Y') as tanggal_terima,
+                penerimaan_cutting.id_roll AS barcode,
+                penerimaan_cutting.created_by_username,
+                DATE_FORMAT(penerimaan_cutting.created_at, '%d-%m-%Y %H:%i:%s') as created_at_format,
+                whs_bppb_h.no_req,
+                whs_bppb_det.no_bppb,
+                whs_bppb_h.tgl_bppb AS tanggal_bppb,
+                whs_bppb_h.tujuan,
+                whs_bppb_h.no_ws,
+                whs_bppb_h.no_ws_aktual AS no_ws_act,
+                whs_bppb_det.qty_out,
+                whs_bppb_det.satuan AS unit,
+                penerimaan_cutting.qty_konv,
+                penerimaan_cutting.unit_konv,
+                whs_bppb_det.no_lot,
+                whs_bppb_det.no_roll,
+                whs_bppb_det.no_roll_buyer,
+                whs_bppb_det.id_item,
+                whs_bppb_det.item_desc AS nama_barang,
+                buyer_ws.styleno AS style,
+                masteritem.color AS warna,
+                penerimaan_cutting.created_by_username AS user
+            ")
+            ->leftJoin('signalbit_erp.whs_bppb_det', 'signalbit_erp.whs_bppb_det.id', '=', 'penerimaan_cutting.whs_bppb_det_id')
+            ->leftJoin('signalbit_erp.whs_bppb_h', 'signalbit_erp.whs_bppb_h.no_bppb', '=', 'signalbit_erp.whs_bppb_det.no_bppb')
+            ->leftJoin('signalbit_erp.masteritem', 'signalbit_erp.masteritem.id_item', '=', 'signalbit_erp.whs_bppb_det.id_item')
+            ->leftJoinSub(
+                DB::table('signalbit_erp.act_costing as ac')
+                    ->selectRaw('jod.id_jo, ac.kpno AS no_ws, ac.styleno')
+                    ->join('signalbit_erp.so as so', 'ac.id', '=', 'so.id_cost')
+                    ->join('signalbit_erp.jo_det as jod', 'so.id', '=', 'jod.id_so')
+                    ->groupBy('jod.id_jo', 'ac.kpno', 'ac.styleno'),
+                'buyer_ws',
+                function ($join) {
+                    $join->on('buyer_ws.id_jo', '=', 'signalbit_erp.whs_bppb_det.id_jo');
+                }
+            )
+            ->where('penerimaan_cutting.id_roll', $request->txtqr)
+            ->get();
+
+            // LEFT JOIN bom_jo_item 
+            //     ON bom_jo_item.id_item = masteritem.id_gen
+            // LEFT JOIN so_det 
+            //     ON so_det.id = bom_jo_item.id_so_det
+            // LEFT JOIN so 
+            //     ON so.id = so_det.id_so
+            // LEFT JOIN act_costing 
+            //     ON act_costing.id = so.id_cost
         
         return json_encode($data);
     }
@@ -510,6 +575,8 @@ class ScanController extends Controller
             SELECT
                 whs_lokasi_inmaterial.no_dok AS no_bpb,
                 DATE_FORMAT(whs_inmaterial_fabric.tgl_dok, '%d-%m-%Y') AS tgl_bpb,
+                whs_lokasi_inmaterial.qty_aktual AS qty,
+		        whs_lokasi_inmaterial.satuan AS unit,
                 whs_lokasi_inmaterial.no_barcode AS no_bintex_return
             FROM
                 whs_lokasi_inmaterial 
@@ -522,6 +589,8 @@ class ScanController extends Controller
             SELECT
                 whs_bppb_det.no_bppb AS no_bpb,
                 DATE_FORMAT(whs_bppb_h.tgl_bppb, '%d-%m-%Y') AS tgl_bpb,
+                whs_bppb_det.qty_out AS qty,
+		        whs_bppb_det.satuan AS unit,
                 whs_bppb_det.id_roll AS no_bintex_return
             FROM
                 whs_bppb_det 
