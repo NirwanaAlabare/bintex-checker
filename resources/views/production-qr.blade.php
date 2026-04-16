@@ -828,7 +828,7 @@
                                     <td class="text-end">${safe(item.total_pemakaian_roll)}</td>
                                     <td class="text-end">${safe(item.reject)}</td>
                                     <td class="text-end">${safe(item.sisa_kain)}</td>
-                                    <td class="text-end">${safe(item.short_roll)}</td>
+                                    <td class="text-end">${safe(Number(item.short_roll).toFixed(2))}</td>
                                     <td class="text-end">${safe(Number(item.short_roll_percentage).toFixed(2))}</td>
                                     <td>${safe(item.operator)}</td>
                                 </tr>
