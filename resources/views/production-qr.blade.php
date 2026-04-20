@@ -748,7 +748,7 @@
                     if (!response || response.length === 0) {
                         tbPenerimaanCutting.append(`
                             <tr>
-                                <td colspan="9" style="text-align:center;">Tidak ada data</td>
+                                <td colspan="19" style="text-align:center;">Tidak ada data</td>
                             </tr>
                         `);
                     } else {
