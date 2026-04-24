@@ -35,26 +35,26 @@ class ScanController extends Controller
                 whs_bppb_det.qty_out AS qty,
                 whs_bppb_det.satuan AS unit
             FROM whs_bppb_det
-            LEFT JOIN whs_bppb_h 
+            LEFT JOIN whs_bppb_h
                 ON whs_bppb_h.no_bppb = whs_bppb_det.no_bppb
             LEFT JOIN (
-                SELECT no_barcode, id_item, no_roll_buyer 
-                FROM whs_lokasi_inmaterial 
+                SELECT no_barcode, id_item, no_roll_buyer
+                FROM whs_lokasi_inmaterial
                 WHERE no_barcode = ?
                 GROUP BY no_barcode, no_roll_buyer
-            ) whs_lokasi_inmaterial 
+            ) whs_lokasi_inmaterial
                 ON whs_lokasi_inmaterial.no_barcode = whs_bppb_det.id_roll
-            LEFT JOIN masteritem 
+            LEFT JOIN masteritem
                 ON masteritem.id_item = whs_lokasi_inmaterial.id_item
-            LEFT JOIN bom_jo_item 
+            LEFT JOIN bom_jo_item
                 ON bom_jo_item.id_item = masteritem.id_gen
-            LEFT JOIN so_det 
+            LEFT JOIN so_det
                 ON so_det.id = bom_jo_item.id_so_det
-            LEFT JOIN so 
+            LEFT JOIN so
                 ON so.id = so_det.id_so
-            LEFT JOIN act_costing 
+            LEFT JOIN act_costing
                 ON act_costing.id = so.id_cost
-            LEFT JOIN mastersupplier 
+            LEFT JOIN mastersupplier
                 ON mastersupplier.Id_Supplier = act_costing.id_buyer
             LEFT JOIN (
                 SELECT
@@ -63,11 +63,11 @@ class ScanController extends Controller
                     ac.styleno,
                     ms.supplier AS buyer
                 FROM act_costing ac
-                INNER JOIN mastersupplier ms 
+                INNER JOIN mastersupplier ms
                     ON ms.id_supplier = ac.id_buyer
-                INNER JOIN so 
+                INNER JOIN so
                     ON ac.id = so.id_cost
-                INNER JOIN jo_det jod 
+                INNER JOIN jo_det jod
                     ON so.id = jod.id_so
                 GROUP BY jod.id_jo
             ) buyer_ws
@@ -78,15 +78,15 @@ class ScanController extends Controller
                     k.id_jo,
                     GROUP_CONCAT(DISTINCT sd.color) AS color_gmt
                 FROM bom_jo_item k
-                INNER JOIN so_det sd 
+                INNER JOIN so_det sd
                     ON sd.id = k.id_so_det
                 WHERE k.status = 'M'
                 AND k.cancel = 'N'
                 GROUP BY k.id_item, k.id_jo
-            ) gmt 
+            ) gmt
                 ON gmt.id_item = masteritem.id_gen
             LEFT JOIN(
-                SELECT 
+                SELECT
                     whs_lokasi_inmaterial.no_barcode,
                     whs_inmaterial_fabric.supplier
                 FROM whs_inmaterial_fabric
@@ -94,9 +94,10 @@ class ScanController extends Controller
                 WHERE whs_lokasi_inmaterial.no_barcode = ?
             ) supp ON supp.no_barcode = whs_bppb_det.id_roll
             WHERE whs_bppb_det.id_roll = ?
+            GROUP BY whs_bppb_det.id_roll LIMIT 1
         ", [
             $request->txtqr,
-            $request->txtqr,  
+            $request->txtqr,
             $request->txtqr
         ]);
 
@@ -117,7 +118,7 @@ class ScanController extends Controller
             'qty' => null,
             'unit' => null
         ]);
-        
+
     }
 
     public function getDataPenerimaanKain(Request $request)
@@ -132,7 +133,7 @@ class ScanController extends Controller
                 whs_inmaterial_fabric.no_invoice AS no_packing_list,
                 whs_lokasi_inmaterial.kode_lok AS lokasi,
                 whs_inmaterial_fabric.type_pch AS tipe
-            FROM 
+            FROM
                 whs_inmaterial_fabric
             INNER JOIN whs_lokasi_inmaterial ON whs_lokasi_inmaterial.no_dok = whs_inmaterial_fabric.no_dok
             WHERE whs_lokasi_inmaterial.no_barcode = ?
@@ -194,7 +195,7 @@ class ScanController extends Controller
         ini_set('memory_limit', '1024M');
 
         $data = DB::connection("mysql_sb")->select("
-            SELECT 
+            SELECT
                 whs_mut_lokasi.no_mut,
                 DATE_FORMAT(whs_mut_lokasi.tgl_mut, '%d-%m-%Y') AS tgl_mut,
                 whs_mut_lokasi.qty_mutasi,
@@ -204,7 +205,7 @@ class ScanController extends Controller
                 whs_mut_lokasi.idbpb_det
             FROM
                 whs_mut_lokasi
-            WHERE whs_mut_lokasi.idbpb_det = ? 
+            WHERE whs_mut_lokasi.idbpb_det = ?
         ", [
             $request->txtqr
         ]);
@@ -233,7 +234,7 @@ class ScanController extends Controller
             ->where('whs_bppb_det.no_bppb', 'NOT LIKE', 'MT/%')
             ->where('whs_bppb_det.id_roll', $request->txtqr)
             ->get();
-        
+
         return json_encode($data);
     }
 
@@ -285,15 +286,15 @@ class ScanController extends Controller
             ->where('penerimaan_cutting.id_roll', $request->txtqr)
             ->get();
 
-            // LEFT JOIN bom_jo_item 
+            // LEFT JOIN bom_jo_item
             //     ON bom_jo_item.id_item = masteritem.id_gen
-            // LEFT JOIN so_det 
+            // LEFT JOIN so_det
             //     ON so_det.id = bom_jo_item.id_so_det
-            // LEFT JOIN so 
+            // LEFT JOIN so
             //     ON so.id = so_det.id_so
-            // LEFT JOIN act_costing 
+            // LEFT JOIN act_costing
             //     ON act_costing.id = so.id_cost
-        
+
         return json_encode($data);
     }
 
@@ -481,7 +482,7 @@ class ScanController extends Controller
 
             UNION ALL
 
-            SELECT 
+            SELECT
                 form_cut_piece_detail.qty qty_in,
                 form_cut_piece.created_at waktu_mulai,
                 form_cut_piece.updated_at waktu_selesai,
@@ -554,11 +555,11 @@ class ScanController extends Controller
                 LEFT JOIN form_cut_piece_detail ON form_cut_piece_detail.form_id = form_cut_piece.id
                 LEFT JOIN form_cut_piece_detail b on b.id_roll = form_cut_piece_detail.id_roll AND b.created_at > form_cut_piece_detail.created_at
                 LEFT JOIN ( SELECT * FROM master_sb_ws GROUP BY id_act_cost ) master_sb_ws ON master_sb_ws.id_act_cost = form_cut_piece.act_costing_id
-                LEFT JOIN scanned_item ON scanned_item.id_roll = form_cut_piece_detail.id_roll 
+                LEFT JOIN scanned_item ON scanned_item.id_roll = form_cut_piece_detail.id_roll
             WHERE
-                scanned_item.id_item IS NOT NULL 
+                scanned_item.id_item IS NOT NULL
                 and form_cut_piece_detail.id_roll = ?
-                AND form_cut_piece_detail.STATUS = 'complete' 
+                AND form_cut_piece_detail.STATUS = 'complete'
             GROUP BY
                 form_cut_piece_detail.id
         ", [$request->txtqr, $request->txtqr, $request->txtqr]);
@@ -579,7 +580,7 @@ class ScanController extends Controller
 		        whs_lokasi_inmaterial.satuan AS unit,
                 whs_lokasi_inmaterial.no_barcode AS no_bintex_return
             FROM
-                whs_lokasi_inmaterial 
+                whs_lokasi_inmaterial
             LEFT JOIn whs_inmaterial_fabric ON whs_inmaterial_fabric.no_dok = whs_lokasi_inmaterial.no_dok
             WHERE
                 whs_lokasi_inmaterial.no_dok LIKE 'GK/RI%'
@@ -593,7 +594,7 @@ class ScanController extends Controller
 		        whs_bppb_det.satuan AS unit,
                 whs_bppb_det.id_roll AS no_bintex_return
             FROM
-                whs_bppb_det 
+                whs_bppb_det
             LEFT JOIN whs_bppb_h ON whs_bppb_h.no_bppb = whs_bppb_det.no_bppb
             WHERE
                 whs_bppb_det.no_bppb LIKE 'GK/RO%'
