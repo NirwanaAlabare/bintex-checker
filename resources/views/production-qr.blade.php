@@ -819,7 +819,7 @@
                         $.each(response, function(index, item) {
                             tbPemakaian.append(`
                                 <tr>
-                                    <td>${formatDate(item.created_at)}</td>
+                                    <td>${formatDate(item.waktu_selesai)}</td>
                                     <td>${safe(item.no_form_cut_input)}</td>
                                     <td>${safe(item.act_costing_ws)}</td>
                                     <td>${safe(item.group_roll)}</td>
