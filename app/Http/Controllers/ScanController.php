@@ -562,7 +562,91 @@ class ScanController extends Controller
                 AND form_cut_piece_detail.STATUS = 'complete'
             GROUP BY
                 form_cut_piece_detail.id
-        ", [$request->txtqr, $request->txtqr, $request->txtqr]);
+            UNION ALL
+            SELECT
+                form_cut_alokasi_gr_panel_barcode.qty_roll qty_in,
+                form_cut_alokasi_gr_panel_barcode.created_at waktu_mulai,
+                form_cut_alokasi_gr_panel_barcode.updated_at waktu_selesai,
+                form_cut_alokasi_gr_panel_barcode.id,
+                DATE_FORMAT(form_cut_alokasi_gr_panel_barcode.updated_at, '%M') bulan,
+                DATE_FORMAT(form_cut_alokasi_gr_panel_barcode.updated_at, '%d-%m-%Y') tgl_input,
+                'GR' no_form_cut_input,
+                '-' nama_meja,
+                COALESCE(msb.ws, '-') act_costing_ws,
+                msb.buyer buyer,
+                msb.styleno style,
+                msb.color color,
+                msb.color color_act,
+                '-' panel,
+                0 qty,
+                '0' cons_ws,
+                0 cons_marker,
+                '0' cons_ampar,
+                0 cons_act,
+                0 cons_piping,
+                0 panjang_marker,
+                '-' unit_panjang_marker,
+                0 comma_marker,
+                '-' unit_comma_marker,
+                0 lebar_marker,
+                '-' unit_lebar_marker,
+                0 panjang_actual,
+                '-' unit_panjang_actual,
+                0 comma_actual,
+                '-' unit_comma_actual,
+                0 lebar_actual,
+                '-' unit_lebar_actual,
+                form_cut_alokasi_gr_panel_barcode.barcode id_roll,
+                scanned_item.id_item,
+                scanned_item.detail_item,
+                COALESCE(scanned_item.roll_buyer, scanned_item.roll, '-') roll,
+                COALESCE(scanned_item.lot, '-') lot,
+                '-' group_roll,
+                'GR' status_roll,
+                COALESCE(form_cut_alokasi_gr_panel_barcode.qty_roll) qty_awal,
+                form_cut_alokasi_gr_panel_barcode.qty_roll qty_roll,
+                COALESCE(scanned_item.unit, '-') unit_roll,
+                '-' berat_amparan,
+                0 est_amparan,
+                0 lembar_gelaran,
+                0 total_ratio,
+                0 qty_cut,
+                '00:00' average_time,
+                '0' sisa_gelaran,
+                0 sambungan,
+                0 sambungan_roll,
+                0 kepala_kain,
+                0 sisa_tidak_bisa,
+                0 reject,
+                0 piping,
+                form_cut_alokasi_gr_panel_barcode.sisa_kain sisa_kain,
+                form_cut_alokasi_gr_panel_barcode.qty_pakai pemakaian_lembar,
+                form_cut_alokasi_gr_panel_barcode.qty_pakai total_pemakaian_roll,
+                ROUND(
+                    (form_cut_alokasi_gr_panel_barcode.qty_roll - (form_cut_alokasi_gr_panel_barcode.qty_pakai + form_cut_alokasi_gr_panel_barcode.sisa_kain)),
+                    2
+                ) short_roll,
+                ROUND(
+                    ((form_cut_alokasi_gr_panel_barcode.qty_roll - (form_cut_alokasi_gr_panel_barcode.qty_pakai + form_cut_alokasi_gr_panel_barcode.sisa_kain)) / COALESCE(scanned_item.qty_in, form_cut_alokasi_gr_panel_barcode.qty_roll)) * 100,
+                    2
+                ) short_roll_percentage,
+                '-' `status`,
+                '-' operator,
+                'GR' tipe_form_cut,
+                form_cut_alokasi_gr_panel_barcode.created_at,
+                form_cut_alokasi_gr_panel_barcode.updated_at,
+                'latest' roll_status
+            FROM
+                `form_cut_alokasi_gr_panel_barcode`
+                left join scanned_item on scanned_item.id_roll = form_cut_alokasi_gr_panel_barcode.barcode
+                left join (SELECT * FROM master_sb_ws GROUP BY ws) msb on msb.ws = form_cut_alokasi_gr_panel_barcode.ws
+            WHERE
+                (barcode IS NOT NULL AND barcode != '')
+                AND form_cut_alokasi_gr_panel_barcode.updated_at >= DATE(NOW() - INTERVAL 2 YEAR)
+                and form_cut_alokasi_gr_panel_barcode.barcode = ?
+            GROUP BY
+                `form_cut_alokasi_gr_panel_barcode`.`id`
+        ", [$request->txtqr, $request->txtqr, $request->txtqr, $request->txtqr]);
 
         return json_encode($data);
     }
