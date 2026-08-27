@@ -646,6 +646,8 @@ class ScanController extends Controller
                 and form_cut_alokasi_gr_panel_barcode.barcode = ?
             GROUP BY
                 `form_cut_alokasi_gr_panel_barcode`.`id`
+            ORDER BY
+                created_at
         ", [$request->txtqr, $request->txtqr, $request->txtqr, $request->txtqr]);
 
         return json_encode($data);
