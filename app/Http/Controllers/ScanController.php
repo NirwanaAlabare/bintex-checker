@@ -284,6 +284,7 @@ class ScanController extends Controller
                 }
             )
             ->where('penerimaan_cutting.id_roll', $request->txtqr)
+            ->orderBy('penerimaan_cutting.tanggal_terima')
             ->get();
 
             // LEFT JOIN bom_jo_item
