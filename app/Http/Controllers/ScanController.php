@@ -353,7 +353,7 @@ class ScanController extends Controller
                                 'Sambungan'
                         END
                 ) status_roll,
-                COALESCE(c.qty, b.qty) qty_awal,
+                COALESCE(b.qty) qty_awal,
                 b.qty qty_roll,
                 b.unit unit_roll,
                 COALESCE(b.berat_amparan, '-') berat_amparan,
