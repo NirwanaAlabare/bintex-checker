@@ -32,13 +32,14 @@ class ScanController extends Controller
                 whs_bppb_det.no_roll,
                 whs_lokasi_inmaterial.no_roll_buyer,
                 masteritem.size AS ukuran,
-                whs_bppb_det.qty_out AS qty,
+                -- whs_bppb_det.qty_out AS qty,
+                whs_lokasi_inmaterial.qty_sj AS qty,
                 whs_bppb_det.satuan AS unit
             FROM whs_bppb_det
             LEFT JOIN whs_bppb_h
                 ON whs_bppb_h.no_bppb = whs_bppb_det.no_bppb
             LEFT JOIN (
-                SELECT no_barcode, id_item, no_roll_buyer
+                SELECT no_barcode, id_item, no_roll_buyer, SUM(qty_sj) AS qty_sj
                 FROM whs_lokasi_inmaterial
                 WHERE no_barcode = ?
                 GROUP BY no_barcode, no_roll_buyer
